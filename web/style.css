@@ -1,0 +1,106 @@
+.hidden {
+	display: none;
+}
+
+body {
+	margin: 0;
+	padding: 0;
+}
+
+#infoarea {
+	margin: 0;
+	/*width: 794px;
+	height: 415px;*/
+	width: 789px;
+	height: 410px;
+	background: #CCC;
+	padding: 5px;
+	position: relative;
+}
+
+#coverImage {
+	max-width: 400px;
+	height: 320px;
+	margin: 0;
+	padding: 0;
+}
+
+#coverarea,#rightpanel {
+	float: left;
+}
+
+#slider {
+	margin: 5px 5px 5px 7px;
+}
+
+#top {
+	position: relative;
+	text-align: center;
+}
+
+#rightpanel {
+	padding-left: 15px;
+	width: 337px;
+}
+
+.songinfo {
+	font-family: sans-serif;
+	white-space: nowrap;
+	margin: 0;
+	overflow: hidden;
+}
+
+#title {
+	font-weight: bolder;
+	height: 59px;
+	font-size: 50px;
+	width: 100%;
+	margin: 0;
+	padding: 0;
+	margin: 0;
+	font-size: 50px;
+}
+
+#artist {
+	font-weight: bold;
+	font-size: 28px;
+}
+
+#album,#year {
+	font-weight: bold;
+	font-size: 18px;
+}
+
+#sliderHolder {
+	position: relative;
+}
+
+#totalLength,#currentPosition {
+	position: absolute;
+	margin-top: 3px;
+	z-index: 5;
+}
+
+#totalLength {
+	right: 20px;
+}
+
+#currentPosition {
+	left: 20px;
+}
+
+#calendar {
+	font-family: monospace;
+	position: absolute;
+	right: 8px;
+	bottom: 5px;
+	text-align: right;
+}
+
+#date {
+	font-size: 30px;
+}
+
+#time {
+	font-size: 50px;
+}

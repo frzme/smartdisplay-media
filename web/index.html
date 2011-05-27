@@ -1,0 +1,119 @@
+<html>
+<head>
+<meta name="viewport" content="width=794; initial-scale=1.0;" />
+<title>Currently Playing Song</title>
+<link type="text/css" href="css/ui-lightness/jquery-ui-1.8.13.custom.css" rel="stylesheet" />
+<link type="text/css" href="style.css" rel="stylesheet" />
+<script type="text/javascript" src="stock-libs/jquery-1.5.2.min.js"></script>
+<script type="text/javascript" src="stock-libs/jquery-ui-1.8.13.custom.min.js"></script>
+<script type="text/javascript" src="stock-libs/jquery.animate-enhanced.js"></script>
+<script type="text/javascript" src="jquery.cliffscroller.js"></script>
+<script type="text/javascript" src="stock-libs/json2.js"></script>
+<script type="text/javascript" src="socket.io/socket.io.js"></script>
+<script type="text/javascript">
+	$(document).ready(function() {
+		setInterval(function() {
+			var now = new Date();
+			$("#date").text (zeroPad(now.getDate()) + "." + zeroPad(now.getMonth() + 1) + "." + zeroPad(now.getFullYear()));
+			$("#time").text (zeroPad(now.getHours()) + ":" + zeroPad(now.getMinutes()) + ":" + zeroPad(now.getSeconds()));
+		}, 500);
+		var socket = new io.Socket();
+		var updateSliderInterval = false;
+		socket.connect();
+		socket.on('message', function(m) {
+			if (m) {
+				update(m);
+				$("#songinfoarea").removeClass("hidden");
+			}
+		});
+		
+		function zeroPad(number) {
+			snumber = '' + number;
+			if (snumber.length == 1) {
+				snumber = "0" + snumber;
+			}
+			return snumber;
+		}
+		
+		function formatTime(seconds) {
+			var minutes = Math.floor(seconds / 60);
+			return minutes + ":" + zeroPad(seconds % 60);
+		}
+
+		function update(response) {
+			var songInfo = response.songInfo;
+			if (songInfo) {
+				for ( var key in songInfo) {
+					$("#" + key).text(songInfo[key]);
+				}
+				if (response.coverUrl) {
+					$("#coverImage").removeClass("hidden");
+					$("#coverImage").attr("src", response.coverUrl);
+				} else {
+					$("#coverImage").attr("src", "");
+					$("#coverImage").addClass("hidden");
+				}
+				$("#slider").slider({
+					min : 0,
+					max : songInfo.length,
+					value : songInfo.position,
+					disabled : true,
+				});
+				$("#currentPosition").text(formatTime(songInfo.position));
+				$("#totalLength").text(formatTime(songInfo.length));
+				setTimeout(function() {
+					$("#title").cliffScroller("linear", 50, 100);
+				}, 100);					
+				
+				if (updateSliderInterval) {
+					clearInterval(updateSliderInterval);
+				}
+				if (songInfo.status == "playing") {
+					(function(startTime) {
+						var updateSlider = function() {
+							var position = Math.floor((new Date() - startTime) / 1000) + parseInt(songInfo.position);
+							$("#slider").slider("value", position);
+							$("#currentPosition").text(formatTime(position));
+							$("#totalLength").text(formatTime(songInfo.length));
+						};
+						updateSliderInterval = setInterval(updateSlider, 500);
+					})(new Date(new Date().getTime()));
+				}
+			}
+
+			if (response.updated) {
+				window.location.reload();
+			}
+		}
+	});
+</script>
+</head>
+
+<body>
+	<div id="infoarea">
+		<div id="songinfoarea" class="hidden">
+			<div class="titlearea" id="top">
+				<div class="songinfo" id="title"></div>
+			</div>
+			<div class="songinfo" id="currentPosition"></div>
+			<div class="songinfo" id="totalLength"></div>
+			<div id="sliderHolder">
+				<div id="slider"></div>
+				<div id="coverarea">
+					<img src="/cover" id="coverImage">
+				</div>
+			</div>
+			<div class="titlearea" id="rightpanel">
+				<div class=".songinfo" id="artist"></div>
+				<div class=".songinfo">
+					<span id="year"></span> <span id="album"></span>
+				</div>
+			</div>
+			<div id="calendar">
+				<div id="date"></div>
+				<div id="time"></div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
