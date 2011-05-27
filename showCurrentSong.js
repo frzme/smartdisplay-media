@@ -29,8 +29,7 @@ function readSongStatus() {
 				var line = lines[x].split("=", 2);
 				newSongInfo[line[0]] = line[1];
 			}
-			currentStatus.songStarted = new Date(new Date()
-					+ newSongInfo.position * 1000);
+			currentStatus.songStarted = new Date(new Date() + newSongInfo.position * 1000);
 			findCover(newSongInfo, function(err, cover) {
 				if (cover) {
 					currentCover = cover;
@@ -69,8 +68,7 @@ function findCoverInDirectory(songInfo, cb) {
 						pref = 0;
 					} else if (file == "cover.jpg") {
 						pref = 5;
-					} else if (file.indexOf("front") > -1
-							|| file.indexOf("cover") > -1) {
+					} else if (file.indexOf("front") > -1 || file.indexOf("cover") > -1) {
 						pref = 7;
 					}
 					if (!image || image.pref > pref) {
@@ -127,8 +125,7 @@ function findCover(songInfo, cb) {
 
 function updatePosition() {
 	if (currentStatus.songInfo && currentStatus.songInfo.status == "playing") {
-		currentStatus.songInfo.position = Math
-				.floor((new Date() - currentStatus.songStarted) / 1000);
+		currentStatus.songInfo.position = Math.floor((new Date() - currentStatus.songStarted) / 1000);
 	}
 }
 
@@ -144,7 +141,7 @@ app.get('/cover', function(req, res) {
 app.use(express.static(WEBROOT));
 
 var socket = io.listen(app, {
-	/*log : false*/
+/* log : false */
 });
 app.listen(PORT);
 
