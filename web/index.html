@@ -9,7 +9,8 @@
 <script type="text/javascript" src="stock-libs/jquery.animate-enhanced.js"></script>
 <script type="text/javascript" src="jquery.cliffscroller.js"></script>
 <script type="text/javascript" src="stock-libs/json2.js"></script>
-<script type="text/javascript" src="socket.io/socket.io.js"></script>
+<!-- use our own patched copy while socket.io does not support unlimited retries -->
+<script type="text/javascript" src="stock-libs/socket.io.js"></script>
 <script type="text/javascript">
 	$(document).ready(function() {
 		function updateCalendar() {
@@ -24,9 +25,9 @@
 		var updateSliderInterval = false;
 		
 		function setupSocketIo() {
-			console.log("Setting up socket.io");
 			var socket = new io.Socket(document.domain, {
-				maxReconnectionAttempts: 3
+				maxReconnectionDelay: 60000,
+				maxReconnectionAttempts: -1
 			});
 			socket.on('message', function(m) {
 				if (m) {
@@ -38,6 +39,11 @@
 				$(".connectionstatusicon").addClass("hidden");
 				$("#connectionstatus-online").removeClass("hidden");
 			});
+			socket.on('connect_failed', function() {
+				$(".connectionstatusicon").addClass("hidden");
+				$("#connectionstatus-broken").removeClass("hidden");
+				socket.connect();
+			});
 			socket.on('disconnect', function() {
 				$(".connectionstatusicon").addClass("hidden");
 				$("#connectionstatus-offline").removeClass("hidden");
@@ -45,9 +51,7 @@
 			socket.on('reconnect_failed', function() {
 				$(".connectionstatusicon").addClass("hidden");
 				$("#connectionstatus-broken").removeClass("hidden");
-				setTimeout(function() {
-					setupSocketIo();
-				}, 100);
+				socket.connect();
 			});
 			socket.connect();
 		}
