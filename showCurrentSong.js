@@ -29,7 +29,7 @@ function readSongStatus() {
 				var line = lines[x].split("=", 2);
 				newSongInfo[line[0]] = line[1];
 			}
-			currentStatus.songStarted = new Date(new Date() + newSongInfo.position * 1000);
+			currentStatus.songStarted = new Date(new Date() - newSongInfo.position * 1000);
 			findCover(newSongInfo, function(err, cover) {
 				if (cover) {
 					currentCover = cover;
