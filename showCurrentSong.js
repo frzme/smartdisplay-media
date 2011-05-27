@@ -160,8 +160,8 @@ fs.watchFile(songinfofile, {
 }, readSongStatus);
 watch.watchTree(path.join(path.dirname(__filename), 'web'), function() {
 	currentStatus.updated = true;
+	update();
 });
-update();
 readSongStatus();
 
 sys.log('Listening on port ' + PORT);
