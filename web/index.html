@@ -12,20 +12,46 @@
 <script type="text/javascript" src="socket.io/socket.io.js"></script>
 <script type="text/javascript">
 	$(document).ready(function() {
-		setInterval(function() {
+		function updateCalendar() {
 			var now = new Date();
 			$("#date").text (zeroPad(now.getDate()) + "." + zeroPad(now.getMonth() + 1) + "." + zeroPad(now.getFullYear()));
 			$("#time").text (zeroPad(now.getHours()) + ":" + zeroPad(now.getMinutes()) + ":" + zeroPad(now.getSeconds()));
+		}
+		setInterval(function() {
+			updateCalendar();
 		}, 500);
-		var socket = new io.Socket();
+		updateCalendar();
 		var updateSliderInterval = false;
-		socket.connect();
-		socket.on('message', function(m) {
-			if (m) {
-				update(m);
-				$("#songinfoarea").removeClass("hidden");
-			}
-		});
+		
+		function setupSocketIo() {
+			console.log("Setting up socket.io");
+			var socket = new io.Socket(document.domain, {
+				maxReconnectionAttempts: 3
+			});
+			socket.on('message', function(m) {
+				if (m) {
+					update(m);
+					$("#songinfoarea").removeClass("hidden");
+				}
+			});
+			socket.on('connect', function() {
+				$(".connectionstatusicon").addClass("hidden");
+				$("#connectionstatus-online").removeClass("hidden");
+			});
+			socket.on('disconnect', function() {
+				$(".connectionstatusicon").addClass("hidden");
+				$("#connectionstatus-offline").removeClass("hidden");
+			});
+			socket.on('reconnect_failed', function() {
+				$(".connectionstatusicon").addClass("hidden");
+				$("#connectionstatus-broken").removeClass("hidden");
+				setTimeout(function() {
+					setupSocketIo();
+				}, 100);
+			});
+			socket.connect();
+		}
+		setupSocketIo();
 		
 		function zeroPad(number) {
 			snumber = '' + number;
@@ -44,7 +70,7 @@
 			var songInfo = response.songInfo;
 			if (songInfo) {
 				for ( var key in songInfo) {
-					$("#" + key).text(songInfo[key]);
+					$("#songinfo-" + key).text(songInfo[key]);
 				}
 				if (response.coverUrl) {
 					$("#coverImage").removeClass("hidden");
@@ -64,6 +90,8 @@
 				setTimeout(function() {
 					$("#title").cliffScroller("linear", 50, 100);
 				}, 100);					
+				$(".playbackstatusicon").addClass("hidden");
+				$("#playbackstatus-" + songInfo.status).removeClass("hidden");
 				
 				if (updateSliderInterval) {
 					clearInterval(updateSliderInterval);
@@ -72,6 +100,10 @@
 					(function(startTime) {
 						var updateSlider = function() {
 							var position = Math.floor((new Date() - startTime) / 1000) + parseInt(songInfo.position);
+							if (position >= songInfo.length) {
+								clearInterval(updateSliderInterval);
+								position = songInfo.length;
+							}
 							$("#slider").slider("value", position);
 							$("#currentPosition").text(formatTime(position));
 							$("#totalLength").text(formatTime(songInfo.length));
@@ -93,7 +125,7 @@
 	<div id="infoarea">
 		<div id="songinfoarea" class="hidden">
 			<div class="titlearea" id="top">
-				<div class="songinfo" id="title"></div>
+				<div class="songinfo" id="songinfo-title"></div>
 			</div>
 			<div class="songinfo" id="currentPosition"></div>
 			<div class="songinfo" id="totalLength"></div>
@@ -104,15 +136,34 @@
 				</div>
 			</div>
 			<div class="titlearea" id="rightpanel">
-				<div class=".songinfo" id="artist"></div>
+				<div class=".songinfo" id="songinfo-artist"></div>
 				<div class=".songinfo">
-					<span id="year"></span> <span id="album"></span>
+					<span id="songinfo-year"></span> <span id="songinfo-album"></span>
 				</div>
 			</div>
-			<div id="calendar">
-				<div id="date"></div>
-				<div id="time"></div>
+		</div>
+		<div id="bottomright">
+			<div id="status">
+				<div id="connectionstatus" class="statusiconholder">
+					<img id="connectionstatus-broken" title="Server connection inactive" class="connectionstatusicon statusicon"
+						src="tango/network-error.png">
+					<!--  -->
+					<img id="connectionstatus-offline" title="Server connection lost" class="connectionstatusicon statusicon hidden"
+						src="tango/network-offline.png">
+					<!--  -->
+					<img id="connectionstatus-online" title="Server connection active" class="connectionstatusicon statusicon hidden"
+						src="tango/network-transmit-receive.png">
+				</div>
+				<div id="playbackstatus" class="statusiconholder">
+					<img id="playbackstatus-playing" class="playbackstatusicon statusicon hidden" src="tango/media-playback-start.png">
+					<!--  -->
+					<img id="playbackstatus-paused" class="playbackstatusicon statusicon hidden" src="tango/media-playback-pause.png">
+					<!--  -->
+					<img id="playbackstatus-stopped" class="playbackstatusicon statusicon" src="tango/media-playback-stop.png">
+				</div>
 			</div>
+			<div id="date"></div>
+			<div id="time"></div>
 		</div>
 	</div>
 </body>

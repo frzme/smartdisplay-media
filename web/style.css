@@ -50,7 +50,7 @@ body {
 	overflow: hidden;
 }
 
-#title {
+#songinfo-title {
 	font-weight: bolder;
 	height: 59px;
 	font-size: 50px;
@@ -61,12 +61,12 @@ body {
 	font-size: 50px;
 }
 
-#artist {
+#songinfo-artist {
 	font-weight: bold;
 	font-size: 28px;
 }
 
-#album,#year {
+#songinfo-album,#songinfo-year {
 	font-weight: bold;
 	font-size: 18px;
 }
@@ -89,7 +89,7 @@ body {
 	left: 20px;
 }
 
-#calendar {
+#bottomright {
 	font-family: monospace;
 	position: absolute;
 	right: 8px;
@@ -103,4 +103,8 @@ body {
 
 #time {
 	font-size: 50px;
+}
+
+.statusiconholder {
+	display: inline;
 }

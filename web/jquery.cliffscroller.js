@@ -13,6 +13,9 @@ jQuery.fn.cliffScroller = function(easing_method,scroll_speed,scroll_delay) {
     
     // can the object actually be scrolled?
     var parentObject = jQuery(this);
+    if (!this.length || this.length == 0) {
+    	return parentObject;
+    }
 	var t = $(this[0].cloneNode(true)).hide().css({
         'position': 'absolute',
         'width': 'auto',
