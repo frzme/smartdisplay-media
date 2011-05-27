@@ -92,7 +92,7 @@
 				$("#currentPosition").text(formatTime(songInfo.position));
 				$("#totalLength").text(formatTime(songInfo.length));
 				setTimeout(function() {
-					$("#title").cliffScroller("linear", 50, 100);
+					$("#songinfo-title").cliffScroller("linear", 50, 100);
 				}, 100);					
 				$(".playbackstatusicon").addClass("hidden");
 				$("#playbackstatus-" + songInfo.status).removeClass("hidden");
