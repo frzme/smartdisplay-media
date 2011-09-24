@@ -35,24 +35,39 @@
 					$("#songinfoarea").removeClass("hidden");
 				}
 			});
-			socket.on('connect', function() {
-				$(".connectionstatusicon").addClass("hidden");
-				$("#connectionstatus-online").removeClass("hidden");
-			});
-			socket.on('connect_failed', function() {
+			
+			function displayOn() {
+				if (window.display) {
+					console.log("Keeping display alive");
+					window.display.keepDisplayAlive();
+				}
+			}
+			function displayOff() {
+				if (window.display) {
+					console.log("Turning display off");
+					window.display.turnDisplayOff();
+				}
+			}
+			
+			var brokenConnection = function() {
 				$(".connectionstatusicon").addClass("hidden");
 				$("#connectionstatus-broken").removeClass("hidden");
+				displayOff();
 				socket.connect();
-			});
+			}
+			var workingConnection = function() {
+				$(".connectionstatusicon").addClass("hidden");
+				$("#connectionstatus-online").removeClass("hidden");
+				displayOn();
+			};
+			
+			socket.on('connect', workingConnection);
+			socket.on('connect_failed', brokenConnection);
 			socket.on('disconnect', function() {
 				$(".connectionstatusicon").addClass("hidden");
 				$("#connectionstatus-offline").removeClass("hidden");
 			});
-			socket.on('reconnect_failed', function() {
-				$(".connectionstatusicon").addClass("hidden");
-				$("#connectionstatus-broken").removeClass("hidden");
-				socket.connect();
-			});
+			socket.on('reconnect_failed', brokenConnection);
 			socket.connect();
 		}
 		setupSocketIo();

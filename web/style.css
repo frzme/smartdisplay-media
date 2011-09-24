@@ -9,10 +9,8 @@ body {
 
 #infoarea {
 	margin: 0;
-	/*width: 794px;
-	height: 415px;*/
-	width: 789px;
-	height: 410px;
+	width: 790px;
+	height: 470px; /* 410 */
 	background: #CCC;
 	padding: 5px;
 	position: relative;
@@ -20,7 +18,7 @@ body {
 
 #coverImage {
 	max-width: 400px;
-	height: 320px;
+	height: 380px; /* 320 */
 	margin: 0;
 	padding: 0;
 }
@@ -30,7 +28,7 @@ body {
 }
 
 #slider {
-	margin: 5px 5px 5px 7px;
+	margin: 5px 5px 5px 10px;
 }
 
 #top {
