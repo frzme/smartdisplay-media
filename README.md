@@ -32,5 +32,5 @@ For both options the following property keys should be present:
  * `length` (length of the song in seconds)
  
  Required npm modules
- -------------------
- You'll need `express`, `musicmetadata` and `socket.io`
+-------------------------------------------
+You'll need `express`, `musicmetadata` and `socket.io`
