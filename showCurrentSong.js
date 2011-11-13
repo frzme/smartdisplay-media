@@ -6,10 +6,12 @@ fs = require('fs');
 io = require('socket.io');
 url = require('url');
 watch = require('watch');
+net = require('net');
 musicmetadata = require('musicmetadata');
 
 PORT = 50116;
 WEBROOT = path.join(path.dirname(__filename), 'web');
+CONTROLPORT = 3333;
 
 var currentStatus = {};
 var currentCover = {};
@@ -20,7 +22,9 @@ function update() {
 	delete currentStatus.updated;
 }
 
+// read file with song status, (old method, new method gets info over network)
 function readSongStatus() {
+	sys.log("Beginning reading new song info");
 	fs.readFile(songinfofile, "binary", function(err, file) {
 		if (!err) {
 			var lines = file.split(/\r?\n/);
@@ -29,19 +33,60 @@ function readSongStatus() {
 				var line = lines[x].split("=", 2);
 				newSongInfo[line[0]] = line[1];
 			}
-			currentStatus.songStarted = new Date(new Date() - newSongInfo.position * 1000);
-			findCover(newSongInfo, function(err, cover) {
-				if (cover) {
-					currentCover = cover;
-					currentStatus.coverUrl = "/cover?r=" + Math.random();
-				} else {
-					currentCover = false;
-					delete currentStatus.coverUrl;
-				}
-				currentStatus.songInfo = newSongInfo;
-				update();
-			});
+			updateSongStatus(newSongInfo);
 		}
+	});
+}
+
+function handleInfoSocketData(data) {
+	var dataStr = data + "";
+	var lines = dataStr.split(/\r?\n/);
+	for ( var i = 0; i < lines.length; i++) {
+		var line = lines[i];
+		var parms = line.split(/\^/);
+		var statusCode = parseInt(parms[0]);
+		if (statusCode >= 110 && statusCode <= 120) {
+			var newSongInfo = {};
+			for ( var x = 0; x < parms.length; x++) {
+				var arg = parms[x].split("=", 2);
+				if (arg.length == 2) {
+					newSongInfo[arg[0]] = arg[1];
+				}
+			}
+			switch (statusCode) {
+				case 111:
+					newSongInfo.status = "playing";
+					break;
+				case 112:
+					newSongInfo.status = "paused";
+					break;
+				case 113:
+					newSongInfo.status = "paused";
+					break;
+			}
+			newSongInfo.statuscode = statusCode;
+			newSongInfo.position = parseFloat(parms[3]);
+			//sys.log(JSON.stringify(newSongInfo));
+			updateSongStatus(newSongInfo);
+		}
+	}
+}
+
+function updateSongStatus(newSongInfo) {
+	sys.log("Got new song info");
+	currentStatus.songStarted = new Date(new Date() - newSongInfo.position * 1000);
+	currentStatus.songInfo = newSongInfo;
+	var now = new Date();
+	findCover(newSongInfo, function(err, cover) {
+		if (cover) {
+			currentCover = cover;
+			currentStatus.coverUrl = "/cover?r=" + Math.random();
+		} else {
+			currentCover = false;
+			delete currentStatus.coverUrl;
+		}
+		sys.debug("Took " + (new Date() - now) + "ms to find cover");
+		update();
 	});
 }
 
@@ -52,7 +97,17 @@ function sendError(res, err) {
 }
 
 function findCoverInDirectory(songInfo, cb) {
-	fs.readdir(songInfo.fpath, function(err, files) {
+	var filePath = songInfo.path;
+	var lastSlash = filePath.lastIndexOf('\\');
+	if (lastSlash == -1) {
+		lastSlash = filePath.lastIndexOf('/');
+	}
+	if (lastSlash == -1) {
+		cb("No Cover Image found");
+		return;
+	}
+	var dir = filePath.substr(0, lastSlash);
+	fs.readdir(dir, function(err, files) {
 		if (err) {
 			cb(err);
 		} else {
@@ -82,7 +137,7 @@ function findCoverInDirectory(songInfo, cb) {
 			if (image) {
 				sys.log("Selected " + image.file + " as cover");
 				cb(false, {
-					path : path.join(songInfo.fpath, image.file)
+					path : path.join(dir, image.file)
 				});
 			} else {
 				cb("No Cover Image found " + files);
@@ -92,19 +147,16 @@ function findCoverInDirectory(songInfo, cb) {
 }
 
 function findCover(songInfo, cb) {
-	if (!songInfo || !songInfo.fpath)
+	if (!songInfo || !songInfo.path)
 		return false;
 	var currentCoverData = false;
-	var stream = fs.createReadStream(songInfo.fn);
+	var stream = fs.createReadStream(songInfo.path);
 	stream.on('error', function() {
-		sys.log("Problem reading file metadata for " + songInfo.fn);
+		sys.log("Problem reading file metadata for " + songInfo.path);
 		findCoverInDirectory(songInfo, cb);
 	});
 	var parser = new musicmetadata(stream);
 	parser.on('metadata', function(result) {
-		songInfo.title = result.title;
-		songInfo.artist = result.artist[0];
-		songInfo.album = result.album;
 		currentCoverData = result.picture;
 	});
 	parser.on('done', function(err) {
@@ -150,15 +202,29 @@ socket.on('connection', function(client) {
 	client.send(currentStatus);
 });
 
+var infoSock = new net.Socket();
+var waitTime = 500;
+infoSock.on('data', handleInfoSocketData);
+infoSock.on('error', function(ex) {
+	//sys.log('Problem while connecting the socket ' + ex);
+});
+infoSock.on('close', function() {
+	waitTime = waitTime * 2;
+	waitTime = Math.min(10000, waitTime);
+	sys.log('Info Socket closed, waiting for ' + (waitTime / 1000) + 's then reconnecting');
+	setTimeout(function() {
+		infoSock.connect(CONTROLPORT);
+	}, waitTime);
+});
+infoSock.connect(CONTROLPORT);
+
+
 var songinfofile = path.join(path.dirname(__filename), 'songinfo.properties');
-fs.watchFile(songinfofile, {
-	persistent : false,
-	interval : 50
-}, readSongStatus);
+//fs.watchFile(songinfofile, { persistent: false, interval : 50}, readSongStatus);
 watch.watchTree(path.join(path.dirname(__filename), 'web'), function() {
 	currentStatus.updated = true;
 	update();
 });
-readSongStatus();
+//readSongStatus();
 
 sys.log('Listening on port ' + PORT);
