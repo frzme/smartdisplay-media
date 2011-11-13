@@ -30,3 +30,7 @@ For both options the following property keys should be present:
  * `path` (complete path of the media file, including the filename)
  * `position` (position in seconds within the file, con be ommited when using option 1)
  * `length` (length of the song in seconds)
+ 
+ Required npm modules
+ -------------------
+ You'll need `express`, `musicmetadata` and `socket.io`

@@ -9,8 +9,7 @@
 <script type="text/javascript" src="stock-libs/jquery.animate-enhanced.js"></script>
 <script type="text/javascript" src="jquery.cliffscroller.js"></script>
 <script type="text/javascript" src="stock-libs/json2.js"></script>
-<!-- use our own patched copy while socket.io does not support unlimited retries -->
-<script type="text/javascript" src="stock-libs/socket.io.js"></script>
+<script type="text/javascript" src="/socket.io/socket.io.js"></script>
 <script type="text/javascript">
 	$(document).ready(function() {
 		function updateCalendar() {
@@ -25,11 +24,11 @@
 		var updateSliderInterval = false;
 		
 		function setupSocketIo() {
-			var socket = new io.Socket(document.domain, {
-				maxReconnectionDelay: 60000,
-				maxReconnectionAttempts: -1
+			var socket = new io.connect(document.domain, {
+				'max reconnection attempts' : Infinity,
+				'reconnection limit' : 60000
 			});
-			socket.on('message', function(m) {
+			socket.on('songStatus', function(m) {
 				if (m) {
 					update(m);
 					$("#songinfoarea").removeClass("hidden");

@@ -1,16 +1,15 @@
-sys = require('sys');
+sys = require('util');
 path = require('path');
 http = require('http');
 express = require('express');
 fs = require('fs');
 io = require('socket.io');
 url = require('url');
-watch = require('watch');
 net = require('net');
 musicmetadata = require('musicmetadata');
 
 PORT = 50116;
-WEBROOT = path.join(path.dirname(__filename), 'web');
+WEBROOT = path.join(path.dirname(__filename), 'web/');
 CONTROLPORT = 3333;
 
 var currentStatus = {};
@@ -18,7 +17,7 @@ var currentCover = {};
 
 function update() {
 	updatePosition();
-	socket.broadcast(currentStatus);
+	socketio.sockets.emit('songStatus', currentStatus);
 	delete currentStatus.updated;
 }
 
@@ -190,16 +189,20 @@ app.get('/cover', function(req, res) {
 		res.send(currentCover.data.data);
 	}
 });
+app.get('/', function(req,res) {
+	res.redirect('/index.html');
+});
 app.use(express.static(WEBROOT));
 
-var socket = io.listen(app, {
+var socketio = io.listen(app, {
 /* log : false */
 });
 app.listen(PORT);
 
-socket.on('connection', function(client) {
+socketio.sockets.on('connection', function(client) {
 	updatePosition();
-	client.send(currentStatus);
+	sys.log("sending status");
+	client.emit('songStatus', currentStatus);
 });
 
 var infoSock = new net.Socket();
@@ -220,8 +223,8 @@ infoSock.connect(CONTROLPORT);
 
 
 var songinfofile = path.join(path.dirname(__filename), 'songinfo.properties');
-//fs.watchFile(songinfofile, { persistent: false, interval : 50}, readSongStatus);
-watch.watchTree(path.join(path.dirname(__filename), 'web'), function() {
+//fs.watch(songinfofile, readSongStatus);
+fs.watch(path.join(path.dirname(__filename), 'web'), function() {
 	currentStatus.updated = true;
 	update();
 });
