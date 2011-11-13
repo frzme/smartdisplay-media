@@ -11,6 +11,7 @@ The website actually displaying the data is served through express.
 Getting it to work
 -------------------------------------------
 The script currently has two methods to retrieve the current Song data:
+
 1. The currently preferred method is to have your mediaplayer listen on a given port and send information about the current song as soon as it changes.
    The information needs to be send in a new line terminated text based format. The syntax for each line is this:
    for foobar 2000 does exactly that when configured with the following fields String
@@ -18,6 +19,7 @@ The script currently has two methods to retrieve the current Song data:
 2. Alternatively it is possible to have the script read (and monitor) a properties file (by default songinfo.properties in the same folder as the script, a sample songinfo.properties is provided in the repo) with information about the current song. 
 
 For both options the following property keys should be present:
+
  * `status` or `statuscode`, status should have the values "playing" "stopped" or "paused" where statuscode has the values 111, 112 or 113 respectively
  * `artist`
  * `album`
