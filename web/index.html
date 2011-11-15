@@ -23,11 +23,12 @@
 		updateCalendar();
 		var updateSliderInterval = false;
 		
-		function setupSocketIo() {
-			var socket = new io.connect(document.domain, {
+		function setupSocketIo() {		
+			var socket = io.connect(document.domain, {
 				'max reconnection attempts' : Infinity,
 				'reconnection limit' : 60000
 			});
+			gsock = socket; 
 			socket.on('songStatus', function(m) {
 				if (m) {
 					update(m);
@@ -48,26 +49,47 @@
 				}
 			}
 			
-			var brokenConnection = function() {
+			function showConnectionStatusIcon(id) {
 				$(".connectionstatusicon").addClass("hidden");
-				$("#connectionstatus-broken").removeClass("hidden");
-				displayOff();
-				socket.connect();
+				$("#" + id).removeClass("hidden");
 			}
-			var workingConnection = function() {
-				$(".connectionstatusicon").addClass("hidden");
-				$("#connectionstatus-online").removeClass("hidden");
+			
+			var brokenConnection = function(e) {
+				console.log("brokenConnection");
+				showConnectionStatusIcon("connectionstatus-broken");
+				displayOff();
+			}
+			var disconnected = function(e) {
+				console.log("disconnected");
+				showConnectionStatusIcon("connectionstatus-offline");
+				displayOff();
+			}
+			var workingConnection = function(e) {
+				console.log("workingConnection");
+				showConnectionStatusIcon("connectionstatus-online");
 				displayOn();
 			};
 			
+			var keepAliveTimeout;
+			var keepAlive = function(k) {
+				if (keepAliveTimeout) {
+					clearTimeout(keepAliveTimeout);
+				}
+				(function(conBrokenTimeout) {
+					socket.emit('ping', '', function() {
+						keepAliveTimeout = setTimeout(keepAlive, 30000);
+						clearTimeout(conBrokenTimeout);
+					});
+				})(setTimeout(brokenConnection, 5000));
+			};
+			keepAlive();
+			
 			socket.on('connect', workingConnection);
 			socket.on('connect_failed', brokenConnection);
-			socket.on('disconnect', function() {
-				$(".connectionstatusicon").addClass("hidden");
-				$("#connectionstatus-offline").removeClass("hidden");
-			});
+			socket.on('reconnecting', disconnected);
+			socket.on('disconnect', disconnected);
 			socket.on('reconnect_failed', brokenConnection);
-			socket.connect();
+			socket.on('reconnect', keepAlive);
 		}
 		setupSocketIo();
 		
@@ -81,7 +103,7 @@
 		
 		function formatTime(seconds) {
 			var minutes = Math.floor(seconds / 60);
-			return minutes + ":" + zeroPad(seconds % 60);
+			return minutes + ":" + zeroPad(Math.floor(seconds) % 60);
 		}
 
 		function update(response) {

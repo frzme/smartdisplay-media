@@ -189,8 +189,8 @@ app.get('/cover', function(req, res) {
 		res.send(currentCover.data.data);
 	}
 });
-app.get('/', function(req,res) {
-	res.redirect('/index.html');
+app.get('/', function(req,res,next) {
+	res.sendfile(path.join(WEBROOT,'index.html'));
 });
 app.use(express.static(WEBROOT));
 
@@ -203,6 +203,9 @@ socketio.sockets.on('connection', function(client) {
 	updatePosition();
 	sys.log("sending status");
 	client.emit('songStatus', currentStatus);
+	client.on('ping', function(data, fn) {
+		fn('pong');
+	});
 });
 
 var infoSock = new net.Socket();
